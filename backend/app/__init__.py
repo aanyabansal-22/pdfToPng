@@ -54,9 +54,11 @@ def create_app():
     from blueprints.removebg import remove_bp
     from blueprints.rotate_flip import rotate_flip_bp
     from blueprints.dpi_converter import dpi_bp
+    from blueprints.metadata_viewer import metadata_bp
     app.register_blueprint(pdf_bp)
     app.register_blueprint(image_bp)
     app.register_blueprint(remove_bp)
     app.register_blueprint(rotate_flip_bp)
     app.register_blueprint(dpi_bp)
+    app.register_blueprint(metadata_bp)
     return app

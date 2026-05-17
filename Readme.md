@@ -9,6 +9,7 @@ This project is a small full‑stack web app for doing simple, local file manipu
 - Rotate or flip images
 - Remove the background from images
 - Convert image DPI for print-ready output
+- View, copy and strip image EXIF metadata
 
 The backend is a Flask API and the frontend is a React app (Vite).
 
@@ -50,7 +51,8 @@ pdfToPng/
 │   │   ├── image.py
 │   │   ├── pdf.py
 │   │   ├── removebg.py
-│   │   └── rotate_flip.py
+│   │   ├── rotate_flip.py
+|   |   ├── metadata_viewer.py 
 |   |   └── dpi_converter.py
 │   └── utils/
 │       ├── __init__.py
@@ -81,6 +83,7 @@ pdfToPng/
 │           ├── ImageJpg.jsx
 │           ├── ImageCompress.jsx
 |           ├── ImageDpi.jsx
+|           ├── ImageMetadata.jsx
 │           ├── RemoveBg.jsx
 │           └── RotateFlip.jsx
 ├── CONTRIBUTING.md
@@ -99,6 +102,7 @@ pdfToPng/
   - `pdf.py` – PDF to PNG conversion endpoint
   - `image.py` – Image format conversions and compression (WebP, JPG, compress)
   - `dpi_converter.py` – Image DPI converter endpoint
+  - `metadata_viewer.py` – View and strip metadata endpoint
   - `removebg.py` – Background removal endpoint
   - `rotate_flip.py` – Rotate/flip endpoint
 - `utils/` – Helper functions and utilities used across blueprints
@@ -123,6 +127,7 @@ pdfToPng/
     - `ImageCompress.jsx` – Image compression page
     - `ImageDpi.jsx` – Image DPI converter page
     - `RemoveBg.jsx` – Background removal page
+    - `ImageMetadata.jsx` – Metadata view page
     - `RotateFlip.jsx` – Rotate/flip page
 - `public/` – Static assets
 
@@ -161,6 +166,8 @@ Available endpoints:
 - `POST /rotateFlip` – Rotate or flip an image
 - `POST /convert-dpi` – Convert image DPI (JPEG, PNG, TIFF, BMP, WebP)
 - `POST /check-dpi` – Check current DPI of an image
+- `POST /view-metadata` – View image metadata
+- `POST /strip-metadata` – Strip metadata from image
 - `GET /health` – Health check
 
 All endpoints:

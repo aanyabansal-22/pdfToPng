@@ -1,6 +1,6 @@
 import React from "react";
 import ToolCard from "./ToolCard";
-import { FileText, Image, FileImage, Eraser, RotateCcw, Sliders, Gauge, Info, Sparkles } from "lucide-react";
+import { FileText, Image, FileImage, Eraser, RotateCcw, Sliders, Gauge, Info, Sparkles, Code } from "lucide-react";
 
 const tools = [
   {
@@ -81,6 +81,16 @@ const tools = [
     path: "/image-metadata",
     gradient: "from-violet-500/10 to-purple-500/10",
     iconGradient: "from-violet-500 to-purple-500",
+  },
+  {
+    id: "image-to-base64",
+    name: "Image to Base64",
+    icon: <Code className="w-8 h-8" />,
+    description:
+      "Convert your images into Base64 Data URIs for easy embedding in HTML, CSS, or JSON.",
+    path: "/image-to-base64",
+    gradient: "from-blue-600/10 to-indigo-600/10",
+    iconGradient: "from-blue-600 to-indigo-600",
   },
 ];
 

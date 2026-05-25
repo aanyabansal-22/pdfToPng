@@ -330,13 +330,12 @@ const toolAnimations = {
 const ToolCard = ({ tool, index }) => (
   <Link
     to={tool.path}
-    className="group relative p-8 rounded-2xl bg-white shadow-sm border border-slate-200 transition-all duration-500 hover:-translate-y-2 hover:shadow-xl hover:border-slate-300 animate-fade-in-up flex flex-col"
+    className="group relative p-4 md:p-8 rounded-2xl bg-white shadow-sm border border-slate-200 transition-all duration-500 hover:-translate-y-2 hover:shadow-xl hover:border-slate-300 animate-fade-in-up flex flex-col h-full min-h-50 md:min-h-60"
     style={{ animationDelay: `${1000 + index * 100}ms` }}
   >
     <div
       className={`absolute inset-0 rounded-2xl bg-linear-to-br ${tool.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10`}
     />
-
     <div className="w-full h-[80px] flex items-center justify-center mb-6 relative">
       {toolAnimations[tool.id] ?? (
         <div
@@ -349,10 +348,10 @@ const ToolCard = ({ tool, index }) => (
       )}
     </div>
 
-    <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-transparent group-hover:bg-linear-to-r group-hover:from-slate-900 group-hover:to-blue-700 group-hover:bg-clip-text transition-all duration-300">
+    <h3 className="text-base md:text-xl leading-tight font-bold text-slate-900 mb-1 md:mb-3 text-center md:text-left max-w-30 mx-auto md:mx-0 line-clamp-2 group-hover:text-transparent group-hover:bg-linear-to-r group-hover:from-slate-900 group-hover:to-blue-700 group-hover:bg-clip-text transition-all duration-300">
       {tool.name}
     </h3>
-    <p className="text-slate-600 text-sm leading-relaxed flex-1">
+    <p className="text-slate-600 text-xs md:text-sm leading-relaxed flex-1 text-center md:text-left">
       {tool.description}
     </p>
 

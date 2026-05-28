@@ -67,6 +67,31 @@ const Sidebar = ({ activeTab, isMobileMenuOpen, isMobile, onClose }) => {
         </div>
 
         <nav className="flex-1 p-4 overflow-y-auto">
+          
+          <Link
+            to="/"
+            className={`
+              flex items-center gap-3 p-3 mb-4 rounded-lg transition-all
+              bg-gradient-to-r from-green-500 to-green-600 text-white
+              hover:from-green-600 hover:to-green-700 shadow-md
+              ${isCollapsed ? "justify-center" : ""}
+            `}
+            title={isCollapsed ? "Back to Home" : ""}
+            onClick={() => {
+              if (isMobile) onClose();
+            }}
+          >
+            <span className="flex-shrink-0 text-lg"></span>
+            {!isCollapsed && (
+              <div className="flex-1 text-left">
+                <div className="font-medium">Back to Home</div>
+                <div className="text-xs opacity-90 mt-0.5">Return to landing page</div>
+              </div>
+            )}
+          </Link>
+
+          {!isCollapsed && <hr className="my-2 border-gray-200" />}
+
           <ul className="space-y-2">
             {menuItems.map((item) => (
               <li key={item.id}>

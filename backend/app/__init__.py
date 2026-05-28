@@ -49,7 +49,7 @@ def create_app():
     
     app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
     
-   from blueprints.pdf import pdf_bp
+    from blueprints.pdf import pdf_bp
     from blueprints.pdf_to_docx import pdf_docx_bp
     from blueprints.docx_to_pdf import docx_pdf_bp
     from blueprints.image import image_bp

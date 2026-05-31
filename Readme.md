@@ -176,7 +176,7 @@ All endpoints:
 - Do **not** persist any data on the server
 
 Note: The PDF to PNG tool runs in the browser using PDF.js and supports single page, range, or all pages (ZIP for multi‑page output). The backend still includes `/convertPng` for server‑side PDF conversion, but the UI uses client‑side rendering by default.
-z
+
 ### 3. Frontend setup
 
 From the `frontend` folder:
@@ -189,7 +189,7 @@ npm run dev
 
 By default, Vite will start the frontend at `http://localhost:5173`.
 
-Make sure your frontend API calls target `http://localhost:5000` for the backendn.
+Make sure your frontend API calls target `http://localhost:5000` for the backend.
 
 ## Running with Docker (Recommended)
 

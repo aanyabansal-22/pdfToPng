@@ -10,7 +10,7 @@ const POSITION_OPTIONS = [
 
 function ImageWatermark() {
   const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(null);
+  const [, setPreview] = useState(null);
 
   const [watermarkType, setWatermarkType] = useState("text");
   const [watermarkText, setWatermarkText] = useState("CONFIDENTIAL");

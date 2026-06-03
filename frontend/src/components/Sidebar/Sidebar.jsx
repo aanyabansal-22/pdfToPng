@@ -68,14 +68,20 @@ const Sidebar = ({ activeTab, isMobileMenuOpen, isMobile, onClose }) => {
           <div className="flex items-center justify-between">
             
             {isMobile ? (
-              /* MOBILE VIEW: Only show the Close button on the top-left */
-              <button
-                onClick={onClose}
-                aria-label="Close sidebar"
-                className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg transition-colors flex items-center justify-center"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              /* MOBILE VIEW: Close button on the left, smaller logo on the right */
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onClose}
+                  aria-label="Close sidebar"
+                  className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg transition-colors flex items-center justify-center"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+                <div className="flex items-center gap-1.5 cursor-default select-none">
+                  <FileText className="w-5 h-5 text-blue-500" />
+                  <h1 className="text-base font-bold text-slate-800">pdfToPng</h1>
+                </div>
+              </div>
             ) : (
               /* DESKTOP VIEW: Show Logo and Collapse Toggle */
               <>

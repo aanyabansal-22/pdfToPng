@@ -13,6 +13,7 @@ const PdfPng = () => {
   const [pageRange, setPageRange] = useState("");
   const [singlePage, setSinglePage] = useState("1");
   const [numPages, setNumPages] = useState(0);
+  const [language, setLanguage] = useState("eng");
 
   const validateFile = useCallback(async (selectedFile) => {
     if (selectedFile && selectedFile.type === "application/pdf") {
@@ -162,6 +163,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker.default;
       try {
         const form = new FormData();
         form.append("file", file);
+        form.append("language", language); 
 
         const tryUrls = ["/convertPng", "http://localhost:5000/convertPng"];
 
@@ -235,6 +237,23 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker.default;
             <span>High (3x)</span>
             <span>Ultra (5x)</span>
           </div>
+        </div>
+        
+        <div className="space-y-3">
+          <label className="text-sm font-bold text-[#1a1a2e] uppercase tracking-wider block">
+            Document Language
+          </label>
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            className="w-full p-2.5 bg-white border border-[#c7d2fe] rounded-lg text-sm text-[#1a1a2e] focus:outline-none focus:ring-2 focus:ring-[#4361ee] transition-all font-medium cursor-pointer"
+          >
+            <option value="eng">🇬🇧 English (Default)</option>
+            <option value="hin">🇮🇳 Hindi (हिन्दी)</option>
+            <option value="spa">🇪🇸 Spanish (Español)</option>
+            <option value="fra">🇫🇷 French (Français)</option>
+            <option value="deu">🇩🇪 German (Deutsch)</option>
+          </select>
         </div>
 
         {/* Page Selection */}

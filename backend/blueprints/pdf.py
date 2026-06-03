@@ -33,6 +33,9 @@ def convert_pdf_to_png():
         # Read PDF into memory and open from bytes
         pdf_bytes = pdf_file.read()
 
+        target_lang = request.form.get("language", "eng")
+
+
         doc = fitz.open(
             stream=pdf_bytes,
             filetype="pdf",

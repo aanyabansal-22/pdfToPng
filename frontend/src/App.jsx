@@ -38,6 +38,7 @@ const MdToHtml = lazy(()=> import("./pages/MdToHtml"))
 const PdfProtect = lazy(() => import("./pages/PdfProtect"));
 const PdfMetadata = lazy(() => import("./pages/PdfMetadata"));
 const PdfToText = lazy(() => import("./pages/PdfToText"));
+const PdfInfo = lazy(() => import("./pages/PdfInfo"));
 
 // Informational pages (linked from the footer)
 const About = lazy(() => import("./pages/About"));
@@ -76,6 +77,7 @@ function App() {
             <Route path="/pdf-protect" element={<PdfProtect />} />
             <Route path="/pdf-metadata" element={<PdfMetadata />} />
             <Route path="/pdf-to-text" element={<PdfToText />} />
+            <Route path="/pdf-info" element={<PdfInfo />} />
 
             <Route path="/image-blur" element={<BlurImage />} />
             <Route path="/image-to-webp" element={<ImageWbp />} />

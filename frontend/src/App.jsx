@@ -36,6 +36,7 @@ const ImageWatermark = lazy(() => import("./pages/ImageWatermark"));
 const BlurImage = lazy(()=> import("./pages/BlurImage"))
 const MdToHtml = lazy(()=> import("./pages/MdToHtml"))
 const PdfProtect = lazy(() => import("./pages/PdfProtect"));
+const PdfCompress = lazy(() => import("./pages/PdfCompress"));
 const PdfMetadata = lazy(() => import("./pages/PdfMetadata"));
 
 // Informational pages (linked from the footer)
@@ -73,6 +74,7 @@ function App() {
             <Route path="/pdf-sign" element={<PdfSign />} />
             <Route path="/pdf-watermark" element={<PDFWatermark />} />
             <Route path="/pdf-protect" element={<PdfProtect />} />
+            <Route path="/pdf-compress" element={<PdfCompress />} />
             <Route path="/pdf-metadata" element={<PdfMetadata />} />
 
             <Route path="/image-blur" element={<BlurImage />} />

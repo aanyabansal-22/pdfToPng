@@ -1,5 +1,3 @@
-
-# pyrefly: ignore [missing-import]
 import fitz  # PyMuPDF
 
 from flask import Blueprint, jsonify, request

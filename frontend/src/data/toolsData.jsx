@@ -16,7 +16,11 @@ import {
   Droplets,
   QrCode,
   Lock,
+  FileDown,
+  LockOpen,
   Tags,
+  Type,
+  BookOpen,
 } from "lucide-react";
 
 const tools = [
@@ -103,6 +107,26 @@ const tools = [
     iconGradient: "from-red-500 to-rose-500",
   },
   {
+    id: "pdf-compress",
+    name: "PDF Compressor",
+    category: "PDF Tools",
+    icon: <FileDown />,
+    description: "Reduce PDF file size with adjustable compression levels.",
+    path: "/pdf-compress",
+    gradient: "from-blue-500/10 to-cyan-500/10",
+    iconGradient: "from-blue-500 to-cyan-500",
+  },
+  {
+    id: "pdf-unlock",
+    name: "Unlock PDF",
+    category: "PDF Tools",
+    icon: <LockOpen />,
+    description: "Remove password protection from your PDF documents.",
+    path: "/pdf-unlock",
+    gradient: "from-green-500/10 to-emerald-500/10",
+    iconGradient: "from-green-500 to-emerald-500",
+  },
+  {
     id: "pdf-metadata",
     name: "PDF Metadata Editor",
     category: "PDF Tools",
@@ -111,6 +135,17 @@ const tools = [
     path: "/pdf-metadata",
     gradient: "from-blue-500/10 to-indigo-500/10",
     iconGradient: "from-blue-500 to-indigo-500",
+  },
+  {
+    id: "pdf-info",
+    name: "PDF Info",
+    category: "PDF Tools",
+    icon: <BookOpen />,
+    description:
+      "Instantly check page count, file size, dimensions, PDF version and encryption status.",
+    path: "/pdf-info",
+    gradient: "from-violet-500/10 to-indigo-500/10",
+    iconGradient: "from-violet-500 to-indigo-500",
   },
   {
     id: "image-compress",
@@ -271,6 +306,16 @@ const tools = [
     path: "/md-to-html",
     gradient: "from-slate-500/10 to-slate-700/10",
     iconGradient: "from-slate-500 to-slate-700",
+  },
+  {
+    id: "pdf-to-text",
+    name: "PDF to Text",
+    category: "Conversion Tools",
+    icon: <Type />,
+    description: "Extract native text content from selectable PDF documents client-side.",
+    path: "/pdf-to-text",
+    gradient: "from-sky-500/10 to-indigo-500/10",
+    iconGradient: "from-sky-500 to-indigo-500",
   },
   {
     id: "image-blur",

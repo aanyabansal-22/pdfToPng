@@ -1,7 +1,8 @@
 from flask import Blueprint, request, send_file, jsonify
 import fitz  # PyMuPDF
 import io
-from utils.validators import validate_pdf_file
+from utils.validators import validate_uploaded_file, validate_pdf_file
+
 merge_pdf_bp = Blueprint("merge_pdf", __name__)
 
 
@@ -16,15 +17,20 @@ def merge_pdfs():
 
     try:
         for f in files:
-            pdf_error = validate_pdf_file(
-                f,
-                f.filename,
-            )
+            _, filename, upload_error = validate_uploaded_file(f, f.filename)
+            if upload_error:
+                return upload_error
+            pdf_error = validate_pdf_file(filename)
+            if pdf_error:
+                return pdf_error
 
             if pdf_error:
                 return pdf_error
             data = f.read()
-            src = fitz.open(stream=data, filetype="pdf")
+            try:
+                src = fitz.open(stream=data, filetype="pdf")
+            except fitz.FileDataError:
+                return jsonify({"error": f"'{f.filename}' appears to be corrupted or is not a valid PDF."}), 400
             merged.insert_pdf(src)
             src.close()
 

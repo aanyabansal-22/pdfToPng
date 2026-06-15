@@ -217,29 +217,26 @@ def compress_image():
 
         img_format = (
             img.format
-            if img.format in ["JPEG", "WEBP"]
+            if img.format in ["JPEG", "WEBP", "PNG"]
             else "JPEG"
         )
 
         if img_format == "JPEG" and img.mode != "RGB":
             img = img.convert("RGB")
 
-        extension = ".jpg" if img_format == "JPEG" else ".webp"
+        extension_map = {"JPEG": ".jpg", "WEBP": ".webp", "PNG": ".png"}
+        mimetype_map = {"JPEG": "image/jpeg", "WEBP": "image/webp", "PNG": "image/png"}
 
-        mimetype = (
-            "image/jpeg"
-            if img_format == "JPEG"
-            else "image/webp"
-        )
+        extension = extension_map[img_format]
+        mimetype = mimetype_map[img_format]
 
         buf = BytesIO()
 
-        img.save(
-            buf,
-            format=img_format,
-            quality=quality,
-            optimize=True,
-        )
+        save_kwargs = {"format": img_format, "optimize": True}
+        if img_format != "PNG":
+            save_kwargs["quality"] = quality
+
+        img.save(buf, **save_kwargs)
 
         buf.seek(0)
 

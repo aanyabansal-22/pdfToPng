@@ -6,9 +6,13 @@ import JSZip from "jszip";
 
 import ToolPageTemplate from "../components/ToolPageTemplate";
 import MultiFileResults from "../components/MultiFileResults";
-
-// Set worker source for PDF.js
-
+import {
+  toastSuccess,
+  toastError,
+  toastLoading,
+  toastDismiss,
+  parseApiError,
+} from "../utils/toast";
 
 const PdfPng = () => {
   const [scale, setScale] = useState(2.0); // Default scale (2x)
@@ -83,15 +87,15 @@ const PdfPng = () => {
         const arrayBuffer = await selectedFile.arrayBuffer();
         const pdfjsLib = await import("pdfjs-dist");
 
-const pdfWorker = await import(
-  "pdfjs-dist/build/pdf.worker.min.mjs?url"
-);
+        const pdfWorker = await import(
+          "pdfjs-dist/build/pdf.worker.min.mjs?url"
+        );
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker.default;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker.default;
 
-const pdf = await pdfjsLib.getDocument({
-  data: arrayBuffer,
-}).promise;
+        const pdf = await pdfjsLib.getDocument({
+          data: arrayBuffer,
+        }).promise;
         setNumPages(pdf.numPages);
       } catch (err) {
         console.error("Error loading PDF info:", err);
@@ -105,7 +109,7 @@ const pdf = await pdfjsLib.getDocument({
     }
     return {
       isValid: false,
-      message: "Error: Please select a PDF file",
+      message: "Please select a valid PDF file.",
     };
   }, []);
 
@@ -119,16 +123,20 @@ const pdf = await pdfjsLib.getDocument({
     setOutputFiles([]);
   };
 
-  const handleCustomSubmit = async ({ file, setStatusMessage, setLoading, setStatusType }) => {
-    setStatusMessage("Processing PDF... This may take a while for large files.");
+  const handleCustomSubmit = async ({ file, setStatusMessage, setLoading }) => {
+    // setStatusMessage here maps to inlineProgress — used for per-page progress text
+    setStatusMessage("Loading PDF…");
+
+    let loadingToastId = null;
+
     try {
       const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf");
 
-const pdfWorker = await import(
-  "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url"
-);
+      const pdfWorker = await import(
+        "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url"
+      );
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker.default;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker.default;
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       const totalPages = pdf.numPages;
@@ -139,9 +147,12 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker.default;
       } else if (pageMode === "single") {
         const pageNum = parseInt(singlePage);
         if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
-          throw new Error(
+          toastError(
             `Invalid page number: ${singlePage}. Please enter a value between 1 and ${totalPages}.`,
           );
+          setStatusMessage("");
+          setLoading(false);
+          return;
         }
         pagesToRender = [pageNum];
       } else if (pageMode === "range") {
@@ -163,18 +174,25 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker.default;
       pagesToRender = [...new Set(pagesToRender)].sort((a, b) => a - b);
 
       if (pagesToRender.length === 0) {
-        throw new Error("No valid pages selected");
+        toastWarningMsg("No valid pages selected. Please check your range.");
+        setStatusMessage("");
+        setLoading(false);
+        return;
       }
 
       setOutputFiles([]); // Clear previous results
+      loadingToastId = toastLoading(
+        `Converting ${pagesToRender.length} page${pagesToRender.length > 1 ? "s" : ""} to PNG…`,
+      );
 
       const zip = new JSZip();
       const results = [];
 
       for (let i = 0; i < pagesToRender.length; i++) {
         const pageNum = pagesToRender[i];
+        // Inline progress text (shows below the button)
         setStatusMessage(
-          `Rendering page ${pageNum} (${i + 1}/${pagesToRender.length})...`,
+          `Rendering page ${pageNum} (${i + 1}/${pagesToRender.length})…`,
         );
         const page = await pdf.getPage(pageNum);
         const viewport = page.getViewport({ scale });
@@ -234,6 +252,7 @@ if (cropEnabled) {
       }
 
       setOutputFiles(results);
+      setStatusMessage(""); // Clear inline progress
 
       if (results.length === 1) {
         const url = window.URL.createObjectURL(results[0].blob);
@@ -244,10 +263,10 @@ if (cropEnabled) {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        setStatusMessage("Success! Your PNG file has been downloaded.");
-        setStatusType("success");
+        toastDismiss(loadingToastId);
+        toastSuccess("Your PNG file has been downloaded successfully!");
       } else {
-        setStatusMessage("Packaging files into ZIP...");
+        setStatusMessage("Packaging files into ZIP…");
         results.forEach((res) => zip.file(res.name, res.blob));
         const zipBlob = await zip.generateAsync({ type: "blob" });
         const url = window.URL.createObjectURL(zipBlob);
@@ -258,23 +277,26 @@ if (cropEnabled) {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        setStatusMessage(
-          `Success! ZIP file with ${results.length} pages downloaded.`,
+        setStatusMessage("");
+        toastDismiss(loadingToastId);
+        toastSuccess(
+          `ZIP file with ${results.length} pages downloaded successfully!`,
         );
-        setStatusType("success");
       }
-
-      setTimeout(() => setStatusMessage(""), 5000);
     } catch (error) {
       console.error("Client-side conversion error:", error);
-      setStatusMessage("Client conversion failed — trying server fallback...");
-      setStatusType("info");
+      if (loadingToastId) toastDismiss(loadingToastId);
 
       // Attempt server-side conversion fallback
+      const serverLoadingId = toastLoading(
+        "Client conversion failed — trying server fallback…",
+      );
+      setStatusMessage("Trying server fallback…");
+
       try {
         const form = new FormData();
         form.append("file", file);
-        form.append("language", language); 
+        form.append("language", language);
 
         const tryUrls = ["/convertPng", "http://localhost:5000/convertPng"];
 
@@ -301,25 +323,36 @@ if (cropEnabled) {
           a.click();
           document.body.removeChild(a);
           window.URL.revokeObjectURL(downloadUrl);
-          setStatusMessage("Success! PNG downloaded from server fallback.");
-          setStatusType("success");
+          setStatusMessage("");
+          toastDismiss(serverLoadingId);
+          toastSuccess("PNG downloaded via server fallback!");
         } else {
           const msg = response
-            ? await response.text()
-            : "Server conversion unavailable";
-          setStatusMessage(`Error: ${msg}`);
-          setStatusType("error");
+            ? await parseApiError(null, response)
+            : "Server conversion unavailable. Please try again later.";
+          setStatusMessage("");
+          toastDismiss(serverLoadingId);
+          toastError(msg);
         }
       } catch (serverErr) {
         console.error("Server fallback error:", serverErr);
-        setStatusMessage(`Error: ${error.message || "Failed to convert file"}`);
-        setStatusType("error");
+        setStatusMessage("");
+        toastDismiss(serverLoadingId);
+        toastError(
+          await parseApiError(serverErr) ||
+            "Failed to convert file. Please try again.",
+        );
       }
-
-      setTimeout(() => setStatusMessage(""), 5000);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Local warning helper (toastWarning isn't imported by default — inline here)
+  const toastWarningMsg = (msg) => {
+    import("sonner").then(({ toast }) =>
+      toast.warning(msg, { duration: 5000 }),
+    );
   };
 
   const extraFields = ({ file }) => {
@@ -351,17 +384,17 @@ if (cropEnabled) {
             <span>Ultra (5x)</span>
           </div>
         </div>
-        <div className="space-y-3">
-          <label className="flex items-center gap-2 font-medium">
-            <input
-            type="checkbox"
-            checked={cropEnabled}
-            onChange={(e) => setCropEnabled(e.target.checked)}
-            />
-            Enable Crop Tool
-          </label>
-        </div>
-        
+
+      <div className="space-y-3">
+  <label className="flex items-center gap-2 font-medium">
+    <input
+      type="checkbox"
+      checked={cropEnabled}
+      onChange={(e) => setCropEnabled(e.target.checked)}
+    />
+    Enable Crop Tool
+  </label>
+</div>
         
         <div className="space-y-3">
           <label className="text-sm font-bold text-[var(--color-app-text)] uppercase tracking-wider block">
@@ -468,7 +501,7 @@ if (cropEnabled) {
       onSubmit={handleCustomSubmit}
       onClear={handleClear}
       submitButtonText="Convert to PNG"
-      loadingButtonText="Converting..."
+      loadingButtonText="Converting…"
       extraFields={extraFields}
       extraContent={() => <MultiFileResults files={outputFiles} />}
       maxWidthClass="max-w-[600px]"

@@ -1,3 +1,11 @@
+from flask import Blueprint, request
+import base64
+import fitz
+from utils.helpers import error, send_file_and_cleanup
+from utils.validators import validate_uploaded_file, validate_pdf_file
+
+pdf_bp = Blueprint("pdf", __name__)
+
 @pdf_bp.route("/convertPng", methods=["POST"])
 def convert_pdf_to_png():
     doc = None

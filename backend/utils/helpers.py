@@ -1,3 +1,16 @@
+import os
+from flask import send_file, after_this_request, jsonify
+import gc
+
+def safe_gc_collect():
+    try:
+        gc.collect()
+    except Exception:
+        pass
+
+def error(message, status_code=400):
+    return jsonify({"success": False, "message": message}), status_code
+
 def send_file_and_cleanup(filename, **kwargs):
     """
     Sends a file and deletes it after the request is completed.

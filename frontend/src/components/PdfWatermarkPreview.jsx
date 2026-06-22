@@ -80,6 +80,12 @@ export default function PdfWatermarkPreview({
       style.transform = "translate(-50%, -50%)";
       break;
 
+    case "diagonal-center":
+      style.top = "50%";
+      style.left = "50%";
+      style.transform = "translate(-50%, -50%) rotate(-45deg)";
+      break;
+
     case "bottom-left":
       style.bottom = "20px";
       style.left = "20px";
@@ -122,7 +128,7 @@ export default function PdfWatermarkPreview({
                 alt="Watermark Preview"
                 style={{
                   ...style,
-                  width: `${size * 2}px`,
+                  width: `${(size / 100) * canvasRef.current?.width}px`,
                   height: "auto",
                 }}
               />

@@ -371,6 +371,16 @@ const tools = [
     path: "/pdf-to-word",
     gradient: "from-blue-500/10 to-sky-500/10",
     iconGradient: "from-blue-500 to-sky-500",
+  },
+  {
+    id: "csv-to-json",
+    name: "CSV to JSON",
+    category: "Conversion Tools",
+    icon: <Code />,
+    description: "Convert CSV files into structured JSON instantly.",
+    path: "/csv-to-json",
+    gradient: "from-emerald-500/10 to-blue-500/10",
+    iconGradient: "from-emerald-500 to-blue-500",
   }
 
 ];

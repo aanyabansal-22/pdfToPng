@@ -7,6 +7,7 @@ const POSITION_OPTIONS = [
   { value: "center", label: "Center" },
   { value: "bottom-left", label: "Bottom Left" },
   { value: "bottom-right", label: "Bottom Right" },
+  { value: "diagonal-center", label: "Diagonal Center" }, 
 ];
 
 function ImageWatermark() {

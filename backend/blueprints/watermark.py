@@ -176,10 +176,19 @@ def create_image_watermark(watermark_file, scale, img_width, img_height, opacity
 
 
 def apply_positioned_watermark(base_img, watermark, position):
-    """Apply watermark at specified position"""
     img_width, img_height = base_img.size
     wm_width, wm_height = watermark.size
-    
+
+    if position == "diagonal-center":
+        # Rotate watermark -45 degrees
+        rotated = watermark.rotate(45, expand=True, resample=Image.Resampling.BICUBIC)
+        rw, rh = rotated.size
+        # Paste at center
+        pos = ((img_width - rw) // 2, (img_height - rh) // 2)
+        output = base_img.copy()
+        output.paste(rotated, pos, rotated)
+        return output
+
     positions = {
         'top-left': (10, 10),
         'top-center': ((img_width - wm_width) // 2, 10),
@@ -191,13 +200,10 @@ def apply_positioned_watermark(base_img, watermark, position):
         'bottom-center': ((img_width - wm_width) // 2, img_height - wm_height - 10),
         'bottom-right': (img_width - wm_width - 10, img_height - wm_height - 10),
     }
-    
+
     pos = positions.get(position, positions['bottom-right'])
-    
-    # Create output image
     output = base_img.copy()
     output.paste(watermark, pos, watermark)
-    
     return output
 
 

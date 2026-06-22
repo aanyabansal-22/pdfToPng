@@ -4,9 +4,21 @@ import { toastError, toastInfo } from "../utils/toast";
 /**
  * Custom hook for handling file uploads, previews, and drag-and-drop logic.
  * @param {Function} validateFile - Callback to validate the selected file. Should return { isValid: boolean, message: string }.
+ * @param {Object} options - Configuration options.
+ * @param {number} options.maxSize - Maximum file size in bytes (default: 10 MB).
+ * @param {number} options.maxFiles - Maximum number of files allowed (default: 1).
+ * @param {boolean} options.multiple - Whether to allow multiple file uploads (default: false).
  */
-export const useFileUpload = (validateFile) => {
-  const [file, setFile] = useState(null);
+export const useFileUpload = (validateFile, options = {}) => {
+  const {
+    maxSize = 10 * 1024 * 1024,
+    maxFiles = 1,
+    multiple = false,
+  } = options;
+
+  const [file, setFile] = useState(null); // Keeps first file for backward compatibility
+  const [files, setFiles] = useState([]); // Array for multi-file support
+
   const [loading, setLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
@@ -27,6 +39,7 @@ export const useFileUpload = (validateFile) => {
     (e) => {
       if (e) e.stopPropagation();
       setFile(null);
+      setFiles([]);
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
         setPreviewUrl(null);
@@ -39,64 +52,79 @@ export const useFileUpload = (validateFile) => {
     [previewUrl],
   );
 
-  const processFile = useCallback(
-    async (selectedFile) => {
-      if (!selectedFile) return;
+  const processFiles = useCallback(
+    async (selectedFilesArray) => {
+      if (!selectedFilesArray || selectedFilesArray.length === 0) return;
 
-      // 1. File size limit check (10 MB) — toast instead of inline message
-      const MAX_SIZE = 10 * 1024 * 1024;
-      if (selectedFile.size > MAX_SIZE) {
-        toastError(
-          `File "${selectedFile.name}" exceeds the 10 MB size limit. Please choose a smaller file.`,
-        );
+      const newFiles = multiple ? Array.from(selectedFilesArray) : [selectedFilesArray[0]];
+
+      if (multiple && files.length + newFiles.length > maxFiles) {
+        toastError(`You can only upload up to ${maxFiles} files.`);
         return;
       }
 
-      // 2. Async validation (type check, PDF page load, etc.)
-      const validation = await validateFile(selectedFile);
+      const validFiles = [];
+      for (const f of newFiles) {
+        if (f.size > maxSize) {
+          toastError(`File "${f.name}" exceeds the limit. Please choose a smaller file.`);
+          continue;
+        }
 
-      if (validation.isValid) {
-        setFile(selectedFile);
+        const validation = await validateFile(f);
+        if (validation.isValid) {
+          validFiles.push({ file: f, message: validation.message });
+        } else {
+          toastError(validation.message || "Invalid file type. Please select a supported format.");
+        }
+      }
 
-        // 3. Image and PDF preview logic
-        if (selectedFile.type.startsWith("image/")) {
+      if (validFiles.length > 0) {
+        const firstValid = validFiles[0].file;
+        setFile(firstValid);
+        setFiles(prev => multiple ? [...prev, ...validFiles.map(v => v.file)] : [firstValid]);
+
+        if (firstValid.type.startsWith("image/") || firstValid.type === "application/pdf") {
           if (previewUrl) URL.revokeObjectURL(previewUrl);
-          const url = URL.createObjectURL(selectedFile);
-          setPreviewUrl(url);
-          // Inline status — shows filename inside the upload area widget
-          setStatusMessage(
-            validation.message || `File "${selectedFile.name}" selected`,
-          );
-        } else if (selectedFile.type === "application/pdf") {
-          if (previewUrl) URL.revokeObjectURL(previewUrl);
-          const url = URL.createObjectURL(selectedFile);
-          setPreviewUrl(url);
-          setStatusMessage(
-            validation.message || `File "${selectedFile.name}" selected`,
-          );
+          setPreviewUrl(URL.createObjectURL(firstValid));
         } else {
           setPreviewUrl(null);
-          setStatusMessage(
-            validation.message || `File "${selectedFile.name}" selected`,
-          );
-          // Toast confirmation for non-image/pdf types (docx, etc.)
-          toastInfo(validation.message || `File "${selectedFile.name}" ready`);
+          toastInfo(validFiles[0].message || `File ready`);
         }
-      } else {
-        // Invalid file type — dismissable error toast
-        toastError(
-          validation.message ||
-            "Invalid file type. Please select a supported format.",
-        );
+
+        if (multiple && validFiles.length > 1) {
+          setStatusMessage(`${validFiles.length} files selected`);
+        } else {
+          setStatusMessage(validFiles[0].message || `File "${firstValid.name}" selected`);
+        }
       }
     },
-    [validateFile, previewUrl],
+    [validateFile, previewUrl, multiple, maxSize, maxFiles, files]
+  );
+
+  const processFile = useCallback(
+    (selectedFile) => processFiles([selectedFile]),
+    [processFiles]
   );
 
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    processFile(selectedFile);
+    processFiles(e.target.files);
   };
+
+  // Clipboard paste support
+  useEffect(() => {
+    const handlePaste = (e) => {
+      // Prevent handling paste if user is typing in an input or textarea
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      const clipboardFiles = e.clipboardData?.files;
+      if (clipboardFiles && clipboardFiles.length > 0) {
+        processFiles(clipboardFiles);
+      }
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [processFiles]);
 
   const handleDragEnter = (e) => {
     e.preventDefault();
@@ -125,11 +153,11 @@ export const useFileUpload = (validateFile) => {
       setIsDragging(false);
 
       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        processFile(e.dataTransfer.files[0]);
+        processFiles(e.dataTransfer.files);
         e.dataTransfer.clearData();
       }
     },
-    [processFile],
+    [processFiles],
   );
 
   const handleAreaClick = (e) => {
@@ -146,7 +174,9 @@ export const useFileUpload = (validateFile) => {
 
   return {
     file,
+    files,
     setFile,
+    setFiles,
     loading,
     setLoading,
     isDragging,
@@ -164,5 +194,6 @@ export const useFileUpload = (validateFile) => {
     handleDrop,
     handleAreaClick,
     processFile,
+    processFiles,
   };
 };

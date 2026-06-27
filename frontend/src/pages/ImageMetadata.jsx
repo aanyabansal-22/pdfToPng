@@ -3,6 +3,124 @@ import ToolPageTemplate from "../components/ToolPageTemplate";
 import { Info, Copy, Check, Download } from "lucide-react";
 import { toastSuccess, toastError, toastInfo, toastLoading, toastDismiss } from "../utils/toast";
 
+// Binary metadata parser for JPEG losslessly stripping APP1 (EXIF) segment
+function stripJpegMetadataLossless(arrayBuffer) {
+  const data = new Uint8Array(arrayBuffer);
+  
+  // Verify SOI marker (0xFFD8)
+  if (data[0] !== 0xff || data[1] !== 0xd8) {
+    throw new Error("Invalid JPEG file format. Lossless stripping requires a valid JPEG image.");
+  }
+  
+  const chunks = [];
+  chunks.push(data.subarray(0, 2)); // Add SOI marker
+  
+  let i = 2;
+  const len = data.length;
+  
+  while (i < len) {
+    // Every JPEG segment starts with 0xFF
+    if (data[i] === 0xff) {
+      const marker = data[i + 1];
+      
+      // End of Image (EOI) marker 0xFFD9
+      if (marker === 0xd9) {
+        chunks.push(data.subarray(i, len));
+        break;
+      }
+      
+      // Check markers that do not have a length field:
+      // RST0-RST7 (0xD0-0xD7), TEM (0x01)
+      if ((marker >= 0xd0 && marker <= 0xd7) || marker === 0x01) {
+        chunks.push(data.subarray(i, i + 2));
+        i += 2;
+        continue;
+      }
+      
+      // Otherwise, the marker has a 2-byte length field
+      if (i + 3 >= len) {
+        chunks.push(data.subarray(i, len));
+        break;
+      }
+      
+      const chunkLen = (data[i + 2] << 8) + data[i + 3];
+      const nextIndex = i + 2 + chunkLen;
+      
+      if (nextIndex > len) {
+        chunks.push(data.subarray(i, len));
+        break;
+      }
+
+      // Skip APP1 segment (0xE1) which holds EXIF/GPS metadata
+      if (marker === 0xe1) {
+        // We drop this chunk completely
+      } else {
+        chunks.push(data.subarray(i, nextIndex));
+      }
+      
+      i = nextIndex;
+    } else {
+      // In case of non-conforming byte, copy the remaining bytes
+      chunks.push(data.subarray(i, len));
+      break;
+    }
+  }
+  
+  // Re-assemble the remaining segments
+  let totalLength = 0;
+  for (const chunk of chunks) {
+    totalLength += chunk.length;
+  }
+  
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  
+  return result.buffer;
+}
+
+// Canvas-based metadata stripping (lossy fallback, works for any format)
+function stripMetadataViaCanvas(file, mimeType, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        
+        if (!ctx) {
+          reject(new Error("Failed to get 2D canvas context."));
+          return;
+        }
+        
+        ctx.drawImage(img, 0, 0);
+        
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error("Canvas conversion failed."));
+            }
+          },
+          mimeType,
+          quality / 100
+        );
+      };
+      img.onerror = () => reject(new Error("Failed to load image preview."));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error("Failed to read image file."));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function ImageMetadata() {
   const [metadata, setMetadata] = useState(null);
   const [securityReport, setSecurityReport] = useState(null);
@@ -63,24 +181,21 @@ export default function ImageMetadata() {
   const handleStripMetadata = async (file, setLoading) => {
     if (!file) return;
     setLoading(true);
-
-    const formData = new FormData();
-    formData.append("image", file);
     const loadingId = toastLoading("Stripping metadata…");
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/strip-metadata`, {
-        method: "POST",
-        body: formData,
-      });
+      let finalBlob;
+      const fileMime = file.type || "image/jpeg";
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to strip metadata");
+      if (fileMime === "image/jpeg" || fileMime === "image/jpg") {
+        const arrayBuffer = await file.arrayBuffer();
+        const strippedBuffer = stripJpegMetadataLossless(arrayBuffer);
+        finalBlob = new Blob([strippedBuffer], { type: fileMime });
+      } else {
+        finalBlob = await stripMetadataViaCanvas(file, fileMime, 95);
       }
 
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(finalBlob);
       const a = document.createElement("a");
       a.href = url;
 
@@ -106,53 +221,50 @@ export default function ImageMetadata() {
       setLoading(false);
     }
   };
+
   const handleCleanAndDownload = async (file, setLoading) => {
-  if (!file) return;
+    if (!file) return;
+    setLoading(true);
+    const loadingId = toastLoading("Privacy-cleaning image…");
 
-  setLoading(true);
-  const loadingId = toastLoading("Privacy-cleaning image…");
+    try {
+      let finalBlob;
+      const fileMime = file.type || "image/jpeg";
 
-  const formData = new FormData();
-  formData.append("image", file);
+      if (fileMime === "image/jpeg" || fileMime === "image/jpg") {
+        const arrayBuffer = await file.arrayBuffer();
+        const strippedBuffer = stripJpegMetadataLossless(arrayBuffer);
+        finalBlob = new Blob([strippedBuffer], { type: fileMime });
+      } else {
+        finalBlob = await stripMetadataViaCanvas(file, fileMime, 95);
+      }
 
-  try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/strip-metadata`, {
-      method: "POST",
-      body: formData,
-    });
+      const url = URL.createObjectURL(finalBlob);
+      const a = document.createElement("a");
+      a.href = url;
 
-    if (!response.ok) throw new Error("Failed to clean image");
+      const baseName = file.name.replace(/\.[^.]+$/, "");
+      const extension = file.name.includes(".") ? file.name.split(".").pop() : "png";
+      a.download = `${baseName}_privacy_cleaned.${extension}`;
 
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
-    const a = document.createElement("a");
-    a.href = url;
+      toastDismiss(loadingId);
+      toastSuccess("Image privacy-cleaned and downloaded!");
 
-    const baseName = file.name.replace(/\.[^.]+$/, "");
-    const extension = file.name.includes(".") ? file.name.split(".").pop() : "png";
-
-    a.download = `${baseName}_privacy_cleaned.${extension}`;
-
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    URL.revokeObjectURL(url);
-
-    toastDismiss(loadingId);
-    toastSuccess("Image privacy-cleaned and downloaded!");
-
-    // optional UX reset
-    setMetadata(null);
-    setSecurityReport(null);
-  } catch (err) {
-    toastDismiss(loadingId);
-    toastError(err.message || "Failed to clean image.");
-  } finally {
-    setLoading(false);
-  }
-};
+      // optional UX reset
+      setMetadata(null);
+      setSecurityReport(null);
+    } catch (err) {
+      toastDismiss(loadingId);
+      toastError(err.message || "Failed to clean image.");
+    } finally {
+      setLoading(false);
+    }
+  };
   const copyToClipboard = (key, value) => {
     navigator.clipboard.writeText(`${key}: ${value}`);
     setCopiedKey(key);

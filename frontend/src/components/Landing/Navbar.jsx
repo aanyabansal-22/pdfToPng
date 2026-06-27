@@ -13,7 +13,7 @@ const Navbar = () => {
     { name: "Home", hash: "home" },
     { name: "Feature", hash: "feature" },
     { name: "Tools", hash: "tools" },
-    { name: "Privacy", hash: "privacy" },
+    { name: "Privacy", path: "/privacy" },
   ];
 
   useEffect(() => {
@@ -74,7 +74,7 @@ const Navbar = () => {
           {navItems.map((item) => (
             <Link
               key={item.name}
-              to={`/#${item.hash}`}
+              to={item.path || `/#${item.hash}`}
               onClick={() => handleDesktopNavClick(item.name)}
               className={`relative font-semibold hover:text-purple-600 py-2 px-4 rounded-xl text-lg transition-all duration-300 hover:bg-purple-100 hover:scale-105 ${
                 activeSection === item.name.toLowerCase()
@@ -138,7 +138,7 @@ const Navbar = () => {
           {navItems.map((item) => (
               <Link
                 key={item.name}
-                to={`/#${item.hash}`}
+                to={item.path || `/#${item.hash}`}
                 onClick={() => handleMobileNavClick(item.name)}
                 className={`w-full py-3 px-4 rounded-xl text-base font-semibold transition-colors duration-200 hover:bg-purple-100 dark:hover:bg-purple-950 hover:text-purple-600 active:scale-[0.98] ${
                 activeSection === item.name.toLowerCase()
